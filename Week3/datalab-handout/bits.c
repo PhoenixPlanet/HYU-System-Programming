@@ -262,8 +262,20 @@ int conditional(int x, int y, int z) {
  *   Rating: 3
  */
 int isLessOrEqual(int x, int y) {
+  int x_signbit = (x >> 31) & 1;
+  int y_signbit = (y >> 31) & 1;
+
+  int mask = 1 << 31;
+  int mask_complement = ~mask;
   int y_complement = ~y;
-  return 2;
+  int a = (x & mask_complement) + (y_complement & mask_complement);
+  int b = !x_signbit + y_signbit + !(a & mask);
+  int condition_1 = (b & 2) >> 1;
+  
+  int condition_2 = x_signbit & (!y_signbit);
+  int condition_3 = x_signbit ^ y_signbit;
+
+  return condition_2 | ((!condition_3) & condition_1);
 }
 //4
 /* 
@@ -275,7 +287,11 @@ int isLessOrEqual(int x, int y) {
  *   Rating: 4 
  */
 int logicalNeg(int x) {
-  return 2;
+  int mask = ~(1 << 31);
+  int a = mask + (x & mask);
+  int b = ~a & ~x;
+
+  return (b >> 31) & 1;
 }
 /* howManyBits - return the minimum number of bits required to represent x in
  *             two's complement
@@ -290,6 +306,9 @@ int logicalNeg(int x) {
  *  Rating: 4
  */
 int howManyBits(int x) {
+  int a = x >> 31;
+  int b = (a & ~x) + (~a & x);
+  
   return 0;
 }
 //float
@@ -306,5 +325,32 @@ int howManyBits(int x) {
  *   Rating: 4
  */
 int floatFloat2Int(unsigned uf) {
-  return 2;
+  int sign, frac, exp, e;
+
+  if (uf & 0x80000000) {
+    sign = -1;
+  } else {
+    sign = 1;
+  }
+
+  frac = (uf & 0x7fffff) | 0x800000;
+  exp = (uf & 0x7f800000) >> 23;
+  
+  if (exp == 0xff) {
+    return 0x80000000;
+  } else if (exp < 127) {
+    return 0;
+  }
+
+  e = exp - 127;
+
+  if (e > 8) {
+    return 0x80000000;
+  }
+
+  if (23 - e >= 0) {
+    return sign * (frac >> (23 - e));
+  } else {
+    return sign * (frac << (e - 23));
+  }
 }
