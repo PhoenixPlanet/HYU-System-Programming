@@ -308,8 +308,29 @@ int logicalNeg(int x) {
 int howManyBits(int x) {
   int a = x >> 31;
   int b = (a & ~x) + (~a & x);
+  int shift = 16;
+
+  int condition_0 = ((!b) << 31) >> 31;
+  int mask = ~0;
+
+  int condition_1 = (!((b >> shift) & mask) << 31) >> 31;
+  int move = 8;
+  shift = shift + (~condition_1 & move) + (condition_1 & (~move + 1));
+
+  condition_1 = (!((b >> shift) & mask) << 31) >> 31;
+  move = move >> 1;
+  shift = shift + (~condition_1 & move) + (condition_1 & (~move + 1));
   
-  return 0;
+  condition_1 = (!((b >> shift) & mask) << 31) >> 31;
+  move = move >> 1;
+  shift = shift + (~condition_1 & move) + (condition_1 & (~move + 1));
+
+  condition_1 = (!((b >> shift) & mask) << 31) >> 31;
+  move = move >> 1;
+  shift = shift + (~condition_1 & move) + (condition_1 & (~move + 1));
+
+  condition_1 = (!((b >> shift) & mask) << 31) >> 31;
+  return shift + (condition_0 & (~1 + 1)) + (~condition_1 & 1) + 1;
 }
 //float
 /* 
@@ -325,7 +346,7 @@ int howManyBits(int x) {
  *   Rating: 4
  */
 int floatFloat2Int(unsigned uf) {
-  int sign, frac, exp, e;
+  int sign, frac, exp, e, t;
 
   if (uf & 0x80000000) {
     sign = -1;
@@ -348,9 +369,11 @@ int floatFloat2Int(unsigned uf) {
     return 0x80000000;
   }
 
-  if (23 - e >= 0) {
-    return sign * (frac >> (23 - e));
+  t = 23 - e;
+
+  if (t >= 0) {
+    return sign * (frac >> t);
   } else {
-    return sign * (frac << (e - 23));
+    return sign * (frac << -t);
   }
 }
