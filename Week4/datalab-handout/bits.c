@@ -315,7 +315,14 @@ unsigned floatNegate(unsigned uf) {
  *   Rating: 3
  */
 int satMul2(int x) {
-   return 2;
+   int sign = x >> 31;
+   int x2 = x << 1;
+   int Tmax = ~(1 << 31);
+   int Tmin = 1 << 31;
+   int edge = (sign & Tmin) + (~sign & Tmax);
+   int sign2 = x2 >> 31;
+   int condition = sign ^ sign2;
+   return (condition & edge) + (~condition & x2);
 }
 /* 
  * thirdBits - return word with every third bit (starting from the LSB) set to 1
@@ -324,7 +331,10 @@ int satMul2(int x) {
  *   Rating: 1
  */
 int thirdBits(void) {
-   return 2;
+   int a = 0x49 << 24;
+   int b = a | (0x24 << 16);
+   int c = b | (0x92 << 8);
+   return c | 0x49;
 }
 /* 
  * signMag2TwosComp - Convert from sign-magnitude to two's complement
@@ -335,5 +345,10 @@ int thirdBits(void) {
  *   Rating: 4
  */
 int signMag2TwosComp(int x) {
-   return 2;
+   int sign = x >> 31;
+   int mask = ~(1 << 31);
+   int pos = x & mask;
+   int neg = ~pos + 1;
+
+   return (sign & neg) + (~sign & pos);
 }
