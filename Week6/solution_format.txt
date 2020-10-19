@@ -1,7 +1,6 @@
-phase1_answer
-phase2_answer
-phase3_answer
-phase4_answer
-phase5_answer
-phase6_answer
-secret_phase_answer (optional)
+Public speaking is very easy.
+1 2 4 7 11 16
+6 m 738
+132 4
+gamfeg
+2 3 6 4 5 1
