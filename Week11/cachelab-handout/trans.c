@@ -1,3 +1,5 @@
+//2019039843
+
 /* 
  * trans.c - Matrix transpose B = A^T
  *
@@ -34,8 +36,9 @@ void transpos_3232(int M, int N, int A[N][M], int B[M][N]) {
                         if (j1 == i1) {
                             t = A[i1][i1];
                         }
-                        else
+                        else {
                             B[j1][i1] = A[i1][j1];
+                        }
                     }
                     B[i1][i1] = t;
                 }
@@ -46,6 +49,55 @@ void transpos_3232(int M, int N, int A[N][M], int B[M][N]) {
                         B[i1][j1] = A[j1][i1];
                     }
                 }	
+            }
+        }
+    }
+}
+
+void transpos_6464(int M, int N, int A[N][M], int B[M][N]) {
+    for (int i = 0; i < N; i += 8) {
+        for (int j = 0; j < M; j += 8) {
+            int i1, t1, t2, t3, t4, t5, t6, t7, t8;
+            for (i1 = i; i1 < i + 4; i1++) {
+                B[j][i1] = A[i1][j];
+                B[j + 1][i1] = A[i1][j + 1];
+                B[j + 2][i1] = A[i1][j + 2];
+                B[j + 3][i1] = A[i1][j + 3];
+                
+                B[j][i1 + 4] = A[i1][j + 4];
+                B[j + 1][i1 + 4] = A[i1][j + 5];
+                B[j + 2][i1 + 4] = A[i1][j + 6];
+                B[j + 3][i1 + 4] = A[i1][j + 7];
+            }
+            for (i1 = 0; i1 < 4; i1++) {
+                t1 = A[i + 4][j + i1];
+                t2 = A[i + 5][j + i1];
+                t3 = A[i + 6][j + i1];
+                t4 = A[i + 7][j + i1];
+                t5 = B[j + i1][i + 4];
+                t6 = B[j + i1][i + 5];
+                t7 = B[j + i1][i + 6];
+                t8 = B[j + i1][i + 7];
+            
+                B[j + i1][i + 4] = t1;
+                B[j + i1][i + 5] = t2;
+                B[j + i1][i + 6] = t3;
+                B[j + i1][i + 7] = t4;
+                B[j + i1 + 4][i] = t5;
+                B[j + i1 + 4][i + 1] = t6;
+                B[j + i1 + 4][i + 2] = t7;
+                B[j + i1 + 4][i + 3] = t8;
+            }
+            for (i1 = i + 4; i1 < i + 8; i1++) {
+                t1 = A[i1][j + 4];
+                t2 = A[i1][j + 5];
+                t3 = A[i1][j + 6];
+                t4 = A[i1][j + 7];
+            
+                B[j + 4][i1] = t1;
+                B[j + 5][i1] = t2;
+                B[j + 6][i1] = t3;
+                B[j + 7][i1] = t4;
             }
         }
     }
@@ -70,7 +122,7 @@ void transpose_submit(int M, int N, int A[N][M], int B[M][N])
     }
 
     if (M == 64 && N == 64) {
-        transpos_3232(M, N, A, B);
+        transpos_6464(M, N, A, B);
     }
 }
 
