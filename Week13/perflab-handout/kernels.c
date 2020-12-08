@@ -254,123 +254,452 @@ void naive_smooth(int dim, pixel *src, pixel *dst)
 	    dst[RIDX(i, j, dim)] = avg(dim, i, j, src);
 }
 
+
+#define ACCUMULATE_SUM(r, g, b, from, idx) { \
+    int _t_idx = (idx); \
+    r += from[_t_idx].red; \
+    g += from[_t_idx].green; \
+    b += from[_t_idx].blue; \
+}
+
+#define INITIALZE_PIXEL_SUM(r, g, b) { \
+    r = 0; g = 0; b = 0; \
+}
+
+#define ASSIGN_TO_DST(dst, r, g, b, div_n) { \
+    dst.red = (unsigned short) (r / div_n); \
+    dst.green = (unsigned short) (g / div_n); \
+    dst.blue = (unsigned short) (b / div_n); \
+}
+
 char my_smooth_descr2[] = "smooth2";
 void my_smooth2(int dim, pixel *src, pixel *dst) 
 {
-    int target_row, target_idx, target_idx_init, i, j, dim_power, dim_x2, n, i1, j1;
+    int target_row, target_idx, target_idx_init, i, j, dim_power, dim_x2;
 
-    pixel_sum t_pixel_sum;
-    pixel t_pixel;
+    int rt;
+    int gt;
+    int bt;
 
     dim_power = dim * dim;
     dim_x2 = dim * 2;
 
     // corner smooth
     // 0, 0
-    initialize_pixel_sum(&t_pixel_sum);
-    accumulate_sum(&t_pixel_sum, src[0]);
-    accumulate_sum(&t_pixel_sum, src[1]);
-    accumulate_sum(&t_pixel_sum, src[dim]);
-    accumulate_sum(&t_pixel_sum, src[dim + 1]);
+    INITIALZE_PIXEL_SUM(rt, gt, bt);
+    ACCUMULATE_SUM(rt, gt, bt, src, 0);
+    ACCUMULATE_SUM(rt, gt, bt, src, 1);
+    ACCUMULATE_SUM(rt, gt, bt, src, dim);
+    ACCUMULATE_SUM(rt, gt, bt, src, dim + 1);
 
-    assign_sum_to_pixel(&t_pixel, t_pixel_sum);
-    dst[0] = t_pixel;
+    ASSIGN_TO_DST(dst[0], rt, gt, bt, 4);
 
     // dim - 1, 0
-    initialize_pixel_sum(&t_pixel_sum);
-    accumulate_sum(&t_pixel_sum, src[dim - 1]);
-    accumulate_sum(&t_pixel_sum, src[dim - 2]);
-    accumulate_sum(&t_pixel_sum, src[dim_x2 - 1]);
-    accumulate_sum(&t_pixel_sum, src[dim_x2 - 2]);
+    INITIALZE_PIXEL_SUM(rt, gt, bt);
+    ACCUMULATE_SUM(rt, gt, bt, src, dim - 1);
+    ACCUMULATE_SUM(rt, gt, bt, src, dim - 2);
+    ACCUMULATE_SUM(rt, gt, bt, src, dim_x2 - 1);
+    ACCUMULATE_SUM(rt, gt, bt, src, dim_x2 - 2);
 
-    assign_sum_to_pixel(&t_pixel, t_pixel_sum);
-    dst[dim - 1] = t_pixel;
+    ASSIGN_TO_DST(dst[dim - 1], rt, gt, bt, 4);
 
     // 0, dim - 1
-    initialize_pixel_sum(&t_pixel_sum);
-    accumulate_sum(&t_pixel_sum, src[dim_power - dim_x2]);
-    accumulate_sum(&t_pixel_sum, src[dim_power - dim_x2 + 1]);
-    accumulate_sum(&t_pixel_sum, src[dim_power - dim]);
-    accumulate_sum(&t_pixel_sum, src[dim_power - dim + 1]);
+    INITIALZE_PIXEL_SUM(rt, gt, bt);
+    ACCUMULATE_SUM(rt, gt, bt, src, dim_power - dim_x2);
+    ACCUMULATE_SUM(rt, gt, bt, src, dim_power - dim_x2 + 1);
+    ACCUMULATE_SUM(rt, gt, bt, src, dim_power - dim);
+    ACCUMULATE_SUM(rt, gt, bt, src, dim_power - dim + 1);
 
-    assign_sum_to_pixel(&t_pixel, t_pixel_sum);
-    dst[dim_power - dim] = t_pixel;
+    ASSIGN_TO_DST(dst[dim_power - dim], rt, gt, bt, 4);
 
     // dim - 1, dim - 1
-    initialize_pixel_sum(&t_pixel_sum);
-    accumulate_sum(&t_pixel_sum, src[dim_power - 1]);
-    accumulate_sum(&t_pixel_sum, src[dim_power - 2]);
-    accumulate_sum(&t_pixel_sum, src[dim_power - dim - 1]);
-    accumulate_sum(&t_pixel_sum, src[dim_power - dim - 2]);
+    INITIALZE_PIXEL_SUM(rt, gt, bt);
+    ACCUMULATE_SUM(rt, gt, bt, src, dim_power - 1);
+    ACCUMULATE_SUM(rt, gt, bt, src, dim_power - 2);
+    ACCUMULATE_SUM(rt, gt, bt, src, dim_power - dim - 1);
+    ACCUMULATE_SUM(rt, gt, bt, src, dim_power - dim - 2);
 
-    assign_sum_to_pixel(&t_pixel, t_pixel_sum);
-    dst[dim_power - 1] = t_pixel;
+    ASSIGN_TO_DST(dst[dim_power - 1], rt, gt, bt, 4);
 
     // edge smooth
     // 1 ~ dim-1, 0
     for (i = 1; i < dim - 1; i++) {
-        initialize_pixel_sum(&t_pixel_sum);
-        for (n = i - 1; n <= i + 1; n++) {
-            accumulate_sum(&t_pixel_sum, src[n]);
-        }
-        for (n = i - 1; n <= i + 1; n++) {
-            accumulate_sum(&t_pixel_sum, src[dim + n]);
-        }
-        assign_sum_to_pixel(dst + i, t_pixel_sum);
+        INITIALZE_PIXEL_SUM(rt, gt, bt);
+
+        ACCUMULATE_SUM(rt, gt, bt, src, i - 1);
+        ACCUMULATE_SUM(rt, gt, bt, src, i);
+        ACCUMULATE_SUM(rt, gt, bt, src, i + 1);
+        ACCUMULATE_SUM(rt, gt, bt, src, i + dim - 1);
+        ACCUMULATE_SUM(rt, gt, bt, src, i + dim);
+        ACCUMULATE_SUM(rt, gt, bt, src, i + dim + 1);
+
+        ASSIGN_TO_DST(dst[i], rt, gt, bt, 6);
     }
 
     // 0, 1 ~ dim-1
     target_row = dim_power - dim_x2;
     for (i = dim; i <= target_row; i += dim) {
-        initialize_pixel_sum(&t_pixel_sum);
+        INITIALZE_PIXEL_SUM(rt, gt, bt);
 
-        accumulate_sum(&t_pixel_sum, src[i - dim]);
-        accumulate_sum(&t_pixel_sum, src[i - dim + 1]);
-        accumulate_sum(&t_pixel_sum, src[i]);
-        accumulate_sum(&t_pixel_sum, src[i + 1]);
-        accumulate_sum(&t_pixel_sum, src[i + dim]);
-        accumulate_sum(&t_pixel_sum, src[i + dim + 1]);
+        ACCUMULATE_SUM(rt, gt, bt, src, i - dim);
+        ACCUMULATE_SUM(rt, gt, bt, src, i - dim + 1);
+        ACCUMULATE_SUM(rt, gt, bt, src, i);
+        ACCUMULATE_SUM(rt, gt, bt, src, i + 1);
+        ACCUMULATE_SUM(rt, gt, bt, src, i + dim);
+        ACCUMULATE_SUM(rt, gt, bt, src, i + dim + 1);
 
-        assign_sum_to_pixel(dst + i, t_pixel_sum);
+        ASSIGN_TO_DST(dst[i], rt, gt, bt, 6);
     }
 
     // dim-1, 1 ~ dim-1
-    for (i = dim-1; i < target_row; i += dim) {
-        initialize_pixel_sum(&t_pixel_sum);
+    target_row = dim_power - dim;
+    for (i = dim_x2-1; i < target_row; i += dim) {
+        INITIALZE_PIXEL_SUM(rt, gt, bt);
 
-        accumulate_sum(&t_pixel_sum, src[i - dim - 1]);
-        accumulate_sum(&t_pixel_sum, src[i - dim]);
-        accumulate_sum(&t_pixel_sum, src[i - 1]);
-        accumulate_sum(&t_pixel_sum, src[i]);
-        accumulate_sum(&t_pixel_sum, src[i + dim - 1]);
-        accumulate_sum(&t_pixel_sum, src[i + dim]);
+        ACCUMULATE_SUM(rt, gt, bt, src, i - dim - 1);
+        ACCUMULATE_SUM(rt, gt, bt, src, i - dim);
+        ACCUMULATE_SUM(rt, gt, bt, src, i - 1);
+        ACCUMULATE_SUM(rt, gt, bt, src, i);
+        ACCUMULATE_SUM(rt, gt, bt, src, i + dim - 1);
+        ACCUMULATE_SUM(rt, gt, bt, src, i + dim);
 
-        assign_sum_to_pixel(dst + i, t_pixel_sum);
+        ASSIGN_TO_DST(dst[i], rt, gt, bt, 6);
     }
 
     // 1 ~ dim-1, dim-1
     for (i = dim_power - dim + 1; i < dim_power - 1; i++) {
-        initialize_pixel_sum(&t_pixel_sum);
-        for (n = i - 1; n <= i + 1; n++) {
-            accumulate_sum(&t_pixel_sum, src[n]);
-        }
-        for (n = i - 1; n <= i + 1; n++) {
-            accumulate_sum(&t_pixel_sum, src[dim + n]);
-        }
-        assign_sum_to_pixel(dst + i, t_pixel_sum);
+        INITIALZE_PIXEL_SUM(rt, gt, bt);
+
+        ACCUMULATE_SUM(rt, gt, bt, src, i - dim - 1);
+        ACCUMULATE_SUM(rt, gt, bt, src, i - dim);
+        ACCUMULATE_SUM(rt, gt, bt, src, i - dim + 1);
+        ACCUMULATE_SUM(rt, gt, bt, src, i - 1);
+        ACCUMULATE_SUM(rt, gt, bt, src, i);
+        ACCUMULATE_SUM(rt, gt, bt, src, i + 1);
+
+        ASSIGN_TO_DST(dst[i], rt, gt, bt, 6);
     }
     
     target_idx_init = dim + 1;
     for (i = 1; i < dim - 1; i++) {
         target_idx = target_idx_init;
         for (j = 1; j < dim - 1; j++) {
-            initialize_pixel_sum(&t_pixel_sum);
-            for(i1 = i - 1; i1 <= i + 1; i1++) {
-                for(j1 = j - 1; j1 <= j + 1; j1++) {
-                    accumulate_sum(&t_pixel_sum, src[RIDX(i1, j1, dim)]);
+            INITIALZE_PIXEL_SUM(rt, gt, bt);
+
+            ACCUMULATE_SUM(rt, gt, bt, src, target_idx - dim - 1);
+            ACCUMULATE_SUM(rt, gt, bt, src, target_idx - dim);
+            ACCUMULATE_SUM(rt, gt, bt, src, target_idx - dim + 1);
+            ACCUMULATE_SUM(rt, gt, bt, src, target_idx - 1);
+            ACCUMULATE_SUM(rt, gt, bt, src, target_idx);
+            ACCUMULATE_SUM(rt, gt, bt, src, target_idx + 1);
+            ACCUMULATE_SUM(rt, gt, bt, src, target_idx + dim - 1);
+            ACCUMULATE_SUM(rt, gt, bt, src, target_idx + dim);
+            ACCUMULATE_SUM(rt, gt, bt, src, target_idx + dim + 1);
+
+            ASSIGN_TO_DST(dst[target_idx], rt, gt, bt, 9);
+            target_idx++;
+        }
+        target_idx_init += dim;
+    }
+}
+
+char my_smooth_descr4[] = "smooth4";
+void my_smooth4(int dim, pixel *src, pixel *dst) 
+{
+    int target_row, target_idx, target_idx_init, i, j, dim_power, dim_x2, i1, j1, i1max, j1max;
+
+    int rt;
+    int gt;
+    int bt;
+
+    dim_power = dim * dim;
+    dim_x2 = dim * 2;
+
+    // corner smooth
+    // 0, 0
+    INITIALZE_PIXEL_SUM(rt, gt, bt);
+    ACCUMULATE_SUM(rt, gt, bt, src, 0);
+    ACCUMULATE_SUM(rt, gt, bt, src, 1);
+    ACCUMULATE_SUM(rt, gt, bt, src, dim);
+    ACCUMULATE_SUM(rt, gt, bt, src, dim + 1);
+
+    ASSIGN_TO_DST(dst[0], rt, gt, bt, 4);
+
+    // dim - 1, 0
+    INITIALZE_PIXEL_SUM(rt, gt, bt);
+    ACCUMULATE_SUM(rt, gt, bt, src, dim - 1);
+    ACCUMULATE_SUM(rt, gt, bt, src, dim - 2);
+    ACCUMULATE_SUM(rt, gt, bt, src, dim_x2 - 1);
+    ACCUMULATE_SUM(rt, gt, bt, src, dim_x2 - 2);
+
+    ASSIGN_TO_DST(dst[dim - 1], rt, gt, bt, 4);
+
+    // 0, dim - 1
+    INITIALZE_PIXEL_SUM(rt, gt, bt);
+    ACCUMULATE_SUM(rt, gt, bt, src, dim_power - dim_x2);
+    ACCUMULATE_SUM(rt, gt, bt, src, dim_power - dim_x2 + 1);
+    ACCUMULATE_SUM(rt, gt, bt, src, dim_power - dim);
+    ACCUMULATE_SUM(rt, gt, bt, src, dim_power - dim + 1);
+
+    ASSIGN_TO_DST(dst[dim_power - dim], rt, gt, bt, 4);
+
+    // dim - 1, dim - 1
+    INITIALZE_PIXEL_SUM(rt, gt, bt);
+    ACCUMULATE_SUM(rt, gt, bt, src, dim_power - 1);
+    ACCUMULATE_SUM(rt, gt, bt, src, dim_power - 2);
+    ACCUMULATE_SUM(rt, gt, bt, src, dim_power - dim - 1);
+    ACCUMULATE_SUM(rt, gt, bt, src, dim_power - dim - 2);
+
+    ASSIGN_TO_DST(dst[dim_power - 1], rt, gt, bt, 4);
+
+    // edge smooth
+    // 1 ~ dim-1, 0
+    for (i = 1; i < dim - 1; i++) {
+        INITIALZE_PIXEL_SUM(rt, gt, bt);
+
+        ACCUMULATE_SUM(rt, gt, bt, src, i - 1);
+        ACCUMULATE_SUM(rt, gt, bt, src, i);
+        ACCUMULATE_SUM(rt, gt, bt, src, i + 1);
+        ACCUMULATE_SUM(rt, gt, bt, src, i + dim - 1);
+        ACCUMULATE_SUM(rt, gt, bt, src, i + dim);
+        ACCUMULATE_SUM(rt, gt, bt, src, i + dim + 1);
+
+        ASSIGN_TO_DST(dst[i], rt, gt, bt, 6);
+    }
+
+    // 0, 1 ~ dim-1
+    target_row = dim_power - dim_x2;
+    for (i = dim; i <= target_row; i += dim) {
+        INITIALZE_PIXEL_SUM(rt, gt, bt);
+
+        ACCUMULATE_SUM(rt, gt, bt, src, i - dim);
+        ACCUMULATE_SUM(rt, gt, bt, src, i - dim + 1);
+        ACCUMULATE_SUM(rt, gt, bt, src, i);
+        ACCUMULATE_SUM(rt, gt, bt, src, i + 1);
+        ACCUMULATE_SUM(rt, gt, bt, src, i + dim);
+        ACCUMULATE_SUM(rt, gt, bt, src, i + dim + 1);
+
+        ASSIGN_TO_DST(dst[i], rt, gt, bt, 6);
+    }
+
+    // dim-1, 1 ~ dim-1
+    target_row = dim_power - dim;
+    for (i = dim_x2-1; i < target_row; i += dim) {
+        INITIALZE_PIXEL_SUM(rt, gt, bt);
+
+        ACCUMULATE_SUM(rt, gt, bt, src, i - dim - 1);
+        ACCUMULATE_SUM(rt, gt, bt, src, i - dim);
+        ACCUMULATE_SUM(rt, gt, bt, src, i - 1);
+        ACCUMULATE_SUM(rt, gt, bt, src, i);
+        ACCUMULATE_SUM(rt, gt, bt, src, i + dim - 1);
+        ACCUMULATE_SUM(rt, gt, bt, src, i + dim);
+
+        ASSIGN_TO_DST(dst[i], rt, gt, bt, 6);
+    }
+
+    // 1 ~ dim-1, dim-1
+    for (i = dim_power - dim + 1; i < dim_power - 1; i++) {
+        INITIALZE_PIXEL_SUM(rt, gt, bt);
+
+        ACCUMULATE_SUM(rt, gt, bt, src, i - dim - 1);
+        ACCUMULATE_SUM(rt, gt, bt, src, i - dim);
+        ACCUMULATE_SUM(rt, gt, bt, src, i - dim + 1);
+        ACCUMULATE_SUM(rt, gt, bt, src, i - 1);
+        ACCUMULATE_SUM(rt, gt, bt, src, i);
+        ACCUMULATE_SUM(rt, gt, bt, src, i + 1);
+
+        ASSIGN_TO_DST(dst[i], rt, gt, bt, 6);
+    }
+    
+    target_idx_init = dim + 1;
+    for (i = 1; i < dim - 1; i += 32) {
+        target_idx = target_idx_init;
+        for (j = 1; j < dim - 1; j += 32) {
+            j1max = j + 32;
+            for (j1 = j; (j1 < j1max) && (j1 < dim - 1); j1++) {
+                i1max = i + 32;
+                for (i1 = i; (i1 < i1max) && (i1 < dim - 1); i1++) {
+                    INITIALZE_PIXEL_SUM(rt, gt, bt);
+
+                    ACCUMULATE_SUM(rt, gt, bt, src, target_idx - dim - 1);
+                    ACCUMULATE_SUM(rt, gt, bt, src, target_idx - dim);
+                    ACCUMULATE_SUM(rt, gt, bt, src, target_idx - dim + 1);
+                    ACCUMULATE_SUM(rt, gt, bt, src, target_idx - 1);
+                    ACCUMULATE_SUM(rt, gt, bt, src, target_idx);
+                    ACCUMULATE_SUM(rt, gt, bt, src, target_idx + 1);
+                    ACCUMULATE_SUM(rt, gt, bt, src, target_idx + dim - 1);
+                    ACCUMULATE_SUM(rt, gt, bt, src, target_idx + dim);
+                    ACCUMULATE_SUM(rt, gt, bt, src, target_idx + dim + 1);
+
+                    ASSIGN_TO_DST(dst[target_idx], rt, gt, bt, 9);
+                    target_idx++;
                 }
             }
-            assign_sum_to_pixel(dst + target_idx, t_pixel_sum);
+        }
+        target_idx_init += dim;
+    }
+}
+
+char my_smooth_descr3[] = "smooth3";
+void my_smooth3(int dim, pixel *src, pixel *dst) 
+{
+    int target_row, target_idx, target_idx_init, i, j, dim_power, dim_x2;
+
+    int rt;
+    int gt;
+    int bt;
+
+    int t_idx;
+
+    dim_power = dim * dim;
+    dim_x2 = dim * 2;
+
+    // corner smooth
+    // 0, 0
+    INITIALZE_PIXEL_SUM(rt, gt, bt);
+    ACCUMULATE_SUM(rt, gt, bt, src, 0);
+    ACCUMULATE_SUM(rt, gt, bt, src, 1);
+    ACCUMULATE_SUM(rt, gt, bt, src, dim);
+    ACCUMULATE_SUM(rt, gt, bt, src, dim + 1);
+
+    ASSIGN_TO_DST(dst[0], rt, gt, bt, 4);
+
+    // dim - 1, 0
+    INITIALZE_PIXEL_SUM(rt, gt, bt);
+    ACCUMULATE_SUM(rt, gt, bt, src, dim - 1);
+    ACCUMULATE_SUM(rt, gt, bt, src, dim - 2);
+    ACCUMULATE_SUM(rt, gt, bt, src, dim_x2 - 1);
+    ACCUMULATE_SUM(rt, gt, bt, src, dim_x2 - 2);
+
+    ASSIGN_TO_DST(dst[dim - 1], rt, gt, bt, 4);
+
+    // 0, dim - 1
+    INITIALZE_PIXEL_SUM(rt, gt, bt);
+    ACCUMULATE_SUM(rt, gt, bt, src, dim_power - dim_x2);
+    ACCUMULATE_SUM(rt, gt, bt, src, dim_power - dim_x2 + 1);
+    ACCUMULATE_SUM(rt, gt, bt, src, dim_power - dim);
+    ACCUMULATE_SUM(rt, gt, bt, src, dim_power - dim + 1);
+
+    ASSIGN_TO_DST(dst[dim_power - dim], rt, gt, bt, 4);
+
+    // dim - 1, dim - 1
+    INITIALZE_PIXEL_SUM(rt, gt, bt);
+    ACCUMULATE_SUM(rt, gt, bt, src, dim_power - 1);
+    ACCUMULATE_SUM(rt, gt, bt, src, dim_power - 2);
+    ACCUMULATE_SUM(rt, gt, bt, src, dim_power - dim - 1);
+    ACCUMULATE_SUM(rt, gt, bt, src, dim_power - dim - 2);
+
+    ASSIGN_TO_DST(dst[dim_power - 1], rt, gt, bt, 4);
+
+    // edge smooth
+    // 1 ~ dim-1, 0
+    for (i = 1; i < dim - 1; i++) {
+        INITIALZE_PIXEL_SUM(rt, gt, bt);
+
+        t_idx = i - 1;
+        ACCUMULATE_SUM(rt, gt, bt, src, t_idx);
+        t_idx++;
+        ACCUMULATE_SUM(rt, gt, bt, src, t_idx);
+        t_idx++;
+        ACCUMULATE_SUM(rt, gt, bt, src, t_idx);
+        t_idx = i + dim - 1;
+        ACCUMULATE_SUM(rt, gt, bt, src, t_idx);
+        t_idx++;
+        ACCUMULATE_SUM(rt, gt, bt, src, t_idx);
+        t_idx++;
+        ACCUMULATE_SUM(rt, gt, bt, src, t_idx);
+
+        ASSIGN_TO_DST(dst[i], rt, gt, bt, 6);
+    }
+
+    // 0, 1 ~ dim-1
+    target_row = dim_power - dim_x2;
+    for (i = dim; i <= target_row; i += dim) {
+        INITIALZE_PIXEL_SUM(rt, gt, bt);
+
+        t_idx = i - dim;
+        ACCUMULATE_SUM(rt, gt, bt, src, t_idx);
+        t_idx++;
+        ACCUMULATE_SUM(rt, gt, bt, src, t_idx);
+        t_idx = i;
+        ACCUMULATE_SUM(rt, gt, bt, src, t_idx);
+        t_idx++;
+        ACCUMULATE_SUM(rt, gt, bt, src, t_idx);
+        t_idx = i + dim;
+        ACCUMULATE_SUM(rt, gt, bt, src, t_idx);
+        t_idx++;
+        ACCUMULATE_SUM(rt, gt, bt, src, t_idx);
+
+        ASSIGN_TO_DST(dst[i], rt, gt, bt, 6);
+    }
+
+    // dim-1, 1 ~ dim-1
+    target_row = dim_power - dim;
+    for (i = dim_x2-1; i < target_row; i += dim) {
+        INITIALZE_PIXEL_SUM(rt, gt, bt);
+
+        t_idx = i - dim - 1;
+        ACCUMULATE_SUM(rt, gt, bt, src, t_idx);
+        t_idx++;
+        ACCUMULATE_SUM(rt, gt, bt, src, t_idx);
+        t_idx = i - 1;
+        ACCUMULATE_SUM(rt, gt, bt, src, t_idx);
+        t_idx++;
+        ACCUMULATE_SUM(rt, gt, bt, src, t_idx);
+        t_idx = i + dim - 1;
+        ACCUMULATE_SUM(rt, gt, bt, src, t_idx);
+        t_idx++;
+        ACCUMULATE_SUM(rt, gt, bt, src, t_idx);
+
+        ASSIGN_TO_DST(dst[i], rt, gt, bt, 6);
+    }
+
+    // 1 ~ dim-1, dim-1
+    for (i = dim_power - dim + 1; i < dim_power - 1; i++) {
+        INITIALZE_PIXEL_SUM(rt, gt, bt);
+
+        t_idx = i - dim - 1;
+        ACCUMULATE_SUM(rt, gt, bt, src, t_idx);
+        t_idx++;
+        ACCUMULATE_SUM(rt, gt, bt, src, t_idx);
+        t_idx++;
+        ACCUMULATE_SUM(rt, gt, bt, src, t_idx);
+        t_idx = i - 1;
+        ACCUMULATE_SUM(rt, gt, bt, src, t_idx);
+        t_idx++;
+        ACCUMULATE_SUM(rt, gt, bt, src, t_idx);
+        t_idx++;
+        ACCUMULATE_SUM(rt, gt, bt, src, t_idx);
+
+        ASSIGN_TO_DST(dst[i], rt, gt, bt, 6);
+    }
+    
+    target_idx_init = dim + 1;
+    for (i = 1; i < dim - 1; i++) {
+        target_idx = target_idx_init;
+        for (j = 1; j < dim - 1; j++) {
+            INITIALZE_PIXEL_SUM(rt, gt, bt);
+            
+            t_idx = target_idx - dim - 1;
+            ACCUMULATE_SUM(rt, gt, bt, src, t_idx);
+            t_idx++;
+            ACCUMULATE_SUM(rt, gt, bt, src, t_idx);
+            t_idx++;
+            ACCUMULATE_SUM(rt, gt, bt, src, t_idx);
+            t_idx = target_idx - 1;
+            ACCUMULATE_SUM(rt, gt, bt, src, t_idx);
+            t_idx++;
+            ACCUMULATE_SUM(rt, gt, bt, src, t_idx);
+            t_idx++;
+            ACCUMULATE_SUM(rt, gt, bt, src, t_idx);
+            t_idx = target_idx + dim - 1;
+            ACCUMULATE_SUM(rt, gt, bt, src, t_idx);
+            t_idx++;
+            ACCUMULATE_SUM(rt, gt, bt, src, t_idx);
+            t_idx++;
+            ACCUMULATE_SUM(rt, gt, bt, src, t_idx);
+
+            ASSIGN_TO_DST(dst[target_idx], rt, gt, bt, 9);
             target_idx++;
         }
         target_idx_init += dim;
@@ -384,7 +713,7 @@ void my_smooth2(int dim, pixel *src, pixel *dst)
 char smooth_descr[] = "smooth: Current working version";
 void smooth(int dim, pixel *src, pixel *dst) 
 {
-    naive_smooth(dim, src, dst);
+    my_smooth2(dim, src, dst);
 }
 
 
@@ -401,5 +730,6 @@ void register_smooth_functions() {
     add_smooth_function(&naive_smooth, naive_smooth_descr);
     /* ... Register additional test functions here */
     add_smooth_function(&my_smooth2, my_smooth_descr2);
+    add_smooth_function(&my_smooth4, my_smooth_descr4);
 }
 
