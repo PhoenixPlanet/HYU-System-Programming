@@ -95,6 +95,121 @@ void my_rotate4(int dim, pixel* src, pixel* dst) {
     }
 }
 
+#define ROTATE_ASSIGN(dst, idx) { \
+    dst[dim_power - (j1 + 1) * dim + idx + i] = src[(idx + i) * dim + j1]; \
+}
+
+#define ROTATE_ASSIGN_32 { \
+    ROTATE_ASSIGN(dst, 0); \
+    ROTATE_ASSIGN(dst, 1); \
+    ROTATE_ASSIGN(dst, 2); \
+    ROTATE_ASSIGN(dst, 3); \
+    ROTATE_ASSIGN(dst, 4); \
+    ROTATE_ASSIGN(dst, 5); \
+    ROTATE_ASSIGN(dst, 6); \
+    ROTATE_ASSIGN(dst, 7); \
+    ROTATE_ASSIGN(dst, 8); \
+    ROTATE_ASSIGN(dst, 9); \
+    ROTATE_ASSIGN(dst, 10); \
+    ROTATE_ASSIGN(dst, 11); \
+    ROTATE_ASSIGN(dst, 12); \
+    ROTATE_ASSIGN(dst, 13); \
+    ROTATE_ASSIGN(dst, 14); \
+    ROTATE_ASSIGN(dst, 15); \
+    ROTATE_ASSIGN(dst, 16); \
+    ROTATE_ASSIGN(dst, 17); \
+    ROTATE_ASSIGN(dst, 18); \
+    ROTATE_ASSIGN(dst, 19); \
+    ROTATE_ASSIGN(dst, 20); \
+    ROTATE_ASSIGN(dst, 21); \
+    ROTATE_ASSIGN(dst, 22); \
+    ROTATE_ASSIGN(dst, 23); \
+    ROTATE_ASSIGN(dst, 24); \
+    ROTATE_ASSIGN(dst, 25); \
+    ROTATE_ASSIGN(dst, 26); \
+    ROTATE_ASSIGN(dst, 27); \
+    ROTATE_ASSIGN(dst, 28); \
+    ROTATE_ASSIGN(dst, 29); \
+    ROTATE_ASSIGN(dst, 30); \
+    ROTATE_ASSIGN(dst, 31); \
+}
+
+/*char my_rotate_descr7[] = "my rotate 7";
+void my_rotate7(int dim, pixel *src, pixel *dst) {
+    int i, j, j1, dim_power, dst_pos, src_pos;
+
+    dim_power = dim * dim;
+
+    for (i = 0; i < dim; i += 32) {
+        for (j = 0; j < dim; j += 32) {
+            dst_pos = dim_power - (j + 1) * dim + i;
+            ROTATE_ASSIGN_32
+            j1++;
+            ROTATE_ASSIGN_32
+            j1++;
+            ROTATE_ASSIGN_32
+            j1++;
+            ROTATE_ASSIGN_32
+            j1++;
+            ROTATE_ASSIGN_32
+            j1++;
+            ROTATE_ASSIGN_32
+            j1++;
+            ROTATE_ASSIGN_32
+            j1++;
+            ROTATE_ASSIGN_32
+            j1++;
+            ROTATE_ASSIGN_32
+            j1++;
+            ROTATE_ASSIGN_32
+            j1++;
+            ROTATE_ASSIGN_32
+            j1++;
+            ROTATE_ASSIGN_32
+            j1++;
+            ROTATE_ASSIGN_32
+            j1++;
+            ROTATE_ASSIGN_32
+            j1++;
+            ROTATE_ASSIGN_32
+            j1++;
+            ROTATE_ASSIGN_32
+            j1++;
+            ROTATE_ASSIGN_32
+            j1++;
+            ROTATE_ASSIGN_32
+            j1++;
+            ROTATE_ASSIGN_32
+            j1++;
+            ROTATE_ASSIGN_32
+            j1++;
+            ROTATE_ASSIGN_32
+            j1++;
+            ROTATE_ASSIGN_32
+            j1++;
+            ROTATE_ASSIGN_32
+            j1++;
+            ROTATE_ASSIGN_32
+            j1++;
+            ROTATE_ASSIGN_32
+            j1++;
+            ROTATE_ASSIGN_32
+            j1++;
+            ROTATE_ASSIGN_32
+            j1++;
+            ROTATE_ASSIGN_32
+            j1++;
+            ROTATE_ASSIGN_32
+            j1++;
+            ROTATE_ASSIGN_32
+            j1++;
+            ROTATE_ASSIGN_32
+            j1++;
+            ROTATE_ASSIGN_32
+        }
+    }
+}*/
+
 char my_rotate_descr5[] = "my rotate 5";
 void my_rotate5(int dim, pixel* src, pixel* dst) {
     int i, j, i1, j1;
@@ -158,9 +273,10 @@ void register_rotate_functions()
     /* ... Register additional test functions here */
     //add_rotate_function(&my_rotate, my_rotate_descr);
     //add_rotate_function(&my_rotate2, my_rotate_descr2);  
-    add_rotate_function(&my_rotate3, my_rotate_descr3);
-    add_rotate_function(&my_rotate4, my_rotate_descr4);
-    //add_rotate_function(&my_rotate5, my_rotate_descr5); 
+    //add_rotate_function(&my_rotate3, my_rotate_descr3);
+    //add_rotate_function(&my_rotate4, my_rotate_descr4);
+    //add_rotate_function(&my_rotate6, my_rotate_descr6); 
+    //add_rotate_function(&my_rotate7, my_rotate_descr7);
 }
 
 
@@ -273,8 +389,7 @@ void naive_smooth(int dim, pixel *src, pixel *dst)
 }
 
 char my_smooth_descr2[] = "smooth2";
-void my_smooth2(int dim, pixel *src, pixel *dst) 
-{
+void my_smooth2(int dim, pixel *src, pixel *dst) {
     int target_row, target_idx, target_idx_init, i, j, dim_power, dim_x2;
 
     int rt;
@@ -403,14 +518,29 @@ void my_smooth2(int dim, pixel *src, pixel *dst)
     }
 }
 
+#define ADD_TWO_PIXEL(t_rt, t_gt, t_bt, s_rt, s_gt, s_bt) {\
+    t_rt += s_rt; \
+    t_gt += s_gt; \
+    t_bt += s_bt; \
+}
+
+#define MOVE_PIXEL(t_rt, t_gt, t_bt, s_rt, s_gt, s_bt) {\
+    t_rt = s_rt; \
+    t_gt = s_gt; \
+    t_bt = s_bt; \
+}
+
 char my_smooth_descr4[] = "smooth4";
-void my_smooth4(int dim, pixel *src, pixel *dst) 
-{
-    int target_row, target_idx, target_idx_init, i, j, dim_power, dim_x2, i1, j1, i1max, j1max;
+void my_smooth4(int dim, pixel *src, pixel *dst) {
+    int target_row, target_idx, target_idx_init, i, j, dim_power, dim_x2;
 
     int rt;
     int gt;
     int bt;
+
+    int prev_rt, prev_gt, prev_bt;
+    int cur_rt, cur_gt, cur_bt;
+    int next_rt, next_gt, next_bt;
 
     dim_power = dim * dim;
     dim_x2 = dim * 2;
@@ -512,37 +642,42 @@ void my_smooth4(int dim, pixel *src, pixel *dst)
     }
     
     target_idx_init = dim + 1;
-    for (i = 1; i < dim - 1; i += 32) {
+    for (i = 1; i < dim - 1; i++) {
         target_idx = target_idx_init;
-        for (j = 1; j < dim - 1; j += 32) {
-            j1max = j + 32;
-            for (j1 = j; (j1 < j1max) && (j1 < dim - 1); j1++) {
-                i1max = i + 32;
-                for (i1 = i; (i1 < i1max) && (i1 < dim - 1); i1++) {
-                    INITIALZE_PIXEL_SUM(rt, gt, bt);
+        INITIALZE_PIXEL_SUM(prev_rt, prev_gt, prev_bt);
+        ACCUMULATE_SUM(prev_rt, prev_gt, prev_bt, src, target_idx - dim - 1);
+        ACCUMULATE_SUM(prev_rt, prev_gt, prev_bt, src, target_idx - 1);
+        ACCUMULATE_SUM(prev_rt, prev_gt, prev_bt, src, target_idx + dim - 1);
 
-                    ACCUMULATE_SUM(rt, gt, bt, src, target_idx - dim - 1);
-                    ACCUMULATE_SUM(rt, gt, bt, src, target_idx - dim);
-                    ACCUMULATE_SUM(rt, gt, bt, src, target_idx - dim + 1);
-                    ACCUMULATE_SUM(rt, gt, bt, src, target_idx - 1);
-                    ACCUMULATE_SUM(rt, gt, bt, src, target_idx);
-                    ACCUMULATE_SUM(rt, gt, bt, src, target_idx + 1);
-                    ACCUMULATE_SUM(rt, gt, bt, src, target_idx + dim - 1);
-                    ACCUMULATE_SUM(rt, gt, bt, src, target_idx + dim);
-                    ACCUMULATE_SUM(rt, gt, bt, src, target_idx + dim + 1);
+        INITIALZE_PIXEL_SUM(cur_rt, cur_gt, cur_bt);
+        ACCUMULATE_SUM(cur_rt, cur_gt, cur_bt, src, target_idx - dim);
+        ACCUMULATE_SUM(cur_rt, cur_gt, cur_bt, src, target_idx);
+        ACCUMULATE_SUM(cur_rt, cur_gt, cur_bt, src, target_idx + dim);
 
-                    ASSIGN_TO_DST(dst[target_idx], rt, gt, bt, 9);
-                    target_idx++;
-                }
-            }
+        for (j = 1; j < dim - 1; j++) {
+            INITIALZE_PIXEL_SUM(rt, gt, bt);
+            INITIALZE_PIXEL_SUM(next_rt, next_gt, next_bt);
+
+            ACCUMULATE_SUM(next_rt, next_gt, next_bt, src, target_idx - dim + 1);
+            ACCUMULATE_SUM(next_rt, next_gt, next_bt, src, target_idx + 1);
+            ACCUMULATE_SUM(next_rt, next_gt, next_bt, src, target_idx + dim + 1);
+
+            ADD_TWO_PIXEL(rt, gt, bt, prev_rt, prev_gt, prev_bt);
+            ADD_TWO_PIXEL(rt, gt, bt, cur_rt, cur_gt, cur_bt);
+            ADD_TWO_PIXEL(rt, gt, bt, next_rt, next_gt, next_bt);
+
+            MOVE_PIXEL(prev_rt, prev_gt, prev_bt, cur_rt, cur_gt, cur_bt);
+            MOVE_PIXEL(cur_rt, cur_gt, cur_bt, next_rt, next_gt, next_bt);
+
+            ASSIGN_TO_DST(dst[target_idx], rt, gt, bt, 9);
+            target_idx++;
         }
         target_idx_init += dim;
     }
 }
 
 char my_smooth_descr3[] = "smooth3";
-void my_smooth3(int dim, pixel *src, pixel *dst) 
-{
+void my_smooth3(int dim, pixel *src, pixel *dst) {
     int target_row, target_idx, target_idx_init, i, j, dim_power, dim_x2;
 
     int rt;
@@ -713,7 +848,7 @@ void my_smooth3(int dim, pixel *src, pixel *dst)
 char smooth_descr[] = "smooth: Current working version";
 void smooth(int dim, pixel *src, pixel *dst) 
 {
-    my_smooth2(dim, src, dst);
+    my_smooth4(dim, src, dst);
 }
 
 
@@ -729,7 +864,7 @@ void register_smooth_functions() {
     add_smooth_function(&smooth, smooth_descr);
     add_smooth_function(&naive_smooth, naive_smooth_descr);
     /* ... Register additional test functions here */
-    add_smooth_function(&my_smooth2, my_smooth_descr2);
+    //add_smooth_function(&my_smooth2, my_smooth_descr2);
     add_smooth_function(&my_smooth4, my_smooth_descr4);
 }
 
